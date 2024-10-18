@@ -1,4 +1,4 @@
-# README for Didactiva AI/ML Classifiers Lab
+# README for ROClab, Didactiva's AI/ML Classifiers Lab
 
 ## Overview
 
