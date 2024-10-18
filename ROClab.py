@@ -25,7 +25,7 @@ def load_lang(lang_code):
         return json.load(lang_file)
 
 # Radio button for language selection
-lang_code = st.radio("Choose language", ['en', 'es'], index=0)
+lang_code = st.radio("Choose language", ['es', 'en'], index=0)
 lang = load_lang(lang_code)
 
 # Define available models
