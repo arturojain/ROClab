@@ -134,11 +134,11 @@ The following classification algorithms are available in the app:
 
 ## Author
 
-This application was developed by **Gustavo Ross** for the **AI in Health Diploma** hosted by **FUNSALUD** and **Didactiva**.
+This application was made by **Gustavo Ross** for the **AI in Health Diploma** hosted by **FUNSALUD** and **Didactiva**.
 
-For any feedback or inquiries, feel free to contact:
+For any contributions, feedback or inquiries, feel free to contact me:
 - Email: gross@funsalud.org.mx
 
 ---
 
-This application is for **educational purposes only** and should not be used for medical decision-making.
+I made this application for **educational purposes only** it should not be used for medical decision-making.
