@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project provides a web-based application built using **Streamlit** to train and evaluate machine learning classification models. The app is designed as part of **Module 6 of the AI in Health Diploma**, aimed at teaching students how to handle structured numerical data for classification tasks, evaluate performance, and optimize model parameters. More about (Didactiva) [https://didactiva.com]
+This project provides a web-based application built using **Streamlit** to train and evaluate machine learning classification models. The app is designed as part of **Module 6 of the AI in Health Diploma**, aimed at teaching students how to handle structured numerical data for classification tasks, evaluate performance, and optimize model parameters. More about [Didactiva](https://didactiva.com)
 
 ## Features
 
