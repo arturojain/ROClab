@@ -1,0 +1,16 @@
+# Ignore virtual environment directories
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+.env/
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore filesystem related files
+*.DS_Store
+*.swp

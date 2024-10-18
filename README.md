@@ -1,4 +1,4 @@
-# README for Didactiva AI Lab - ML Classifiers App
+# README for Didactiva AI/ML Classifiers Lab
 
 ## Overview
 
@@ -102,7 +102,7 @@ streamlit run app.py
 
 ## Instructions for Use
 
-1. **Upload Data**: Load a CSV file that includes a target column for classification and the features.
+1. **Upload Data**: Load a CSV file that includes a target column for classification and the features. Please note this lab does not (yet) handle categorical vars (just numerical). Contributions to add var encodings (label, one-hot, target, count, etc) are very welcome! you might also want to remove a couple of unnecessary columns. 
 2. **Exploratory Data Analysis**: 
    - Explore variable distributions.
    - View correlation heatmaps.
