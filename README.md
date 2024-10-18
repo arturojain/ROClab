@@ -137,7 +137,7 @@ The following classification algorithms are available in the app:
 This application was made by **Gustavo Ross** for the **AI in Health Diploma** hosted by **FUNSALUD** and **Didactiva**.
 
 For any contributions, feedback or inquiries, feel free to contact me:
-- Email: gross@funsalud.org.mx
+- Email: gustavo@didactiva.com
 
 ---
 
