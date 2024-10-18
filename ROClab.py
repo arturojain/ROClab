@@ -161,9 +161,9 @@ with col_modelo:
             else:
                 st.text(lang['no_missing_values'], help=lang['no_missing_help'])
             
-            normalize = st.checkbox(lang['normalize_values'], help=lang['normalize_help'])
-            lasso = st.checkbox(lang['lasso_regularization'], help=lang['lasso_help'])
-            outlier_detection = st.checkbox(lang['remove_outliers'], help=lang['remove_outliers_help'])
+            normalize = st.toggle(lang['normalize_values'], help=lang['normalize_help'])
+            lasso = st.toggle(lang['lasso_regularization'], help=lang['lasso_help'])
+            outlier_detection = st.toggle(lang['remove_outliers'], help=lang['remove_outliers_help'])
 
             # Set up configurations on the left side
             st.text(lang['sample_splitting'], help=lang['sample_splitting_help'])
@@ -227,6 +227,7 @@ with col_modelo:
             
             # Model description
             st.write(model_descriptions.get(model_name))
+            st.write(lang['hyperparameters'])
                       
             # Initialize the model based on the user's selection
             if model_name == 'Logistic Regression':
@@ -273,6 +274,7 @@ with col_modelo:
 
             elif model_name == 'Naive Bayes':
                 model = ModelClass()  # No additional parameters required
+                st.write(lang['naive_bayes_no_hyperparameters'])
 
             elif model_name == 'LightGBM':
                 learning_rate = st.slider(lang['xgb_learning_rate'], 0.01, 0.3, 0.1, help=lang['xgb_learning_rate_help'])

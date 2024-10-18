@@ -69,7 +69,7 @@
     "has": "has",
     "but": "but",
     "error": "An error occurred",
-
+    "hyperparameters": "Adjust hyperparameters:",
     "data_preparation_title": "Data Preparation",
     "data_preparation_help": "Prepare your data for model training by selecting how to handle missing values and normalize the features.",
     "no_missing_values": "No missing values in the dataset.",
@@ -92,6 +92,7 @@
     "knn_neighbors": "Number of Neighbors",
     "knn_neighbors_help": "The number of neighbors to consider when classifying a new instance.",
     "naive_bayes_desc": "Naive Bayes is a family of probabilistic algorithms based on Bayes' theorem, assuming independence between features. [More information](https://es.wikipedia.org/wiki/Clasificador_bayesiano_ingenuo)",
+    "naive_bayes_no_hyperparameters": "No hyperparameters to adjust for Naive Bayes.",
     "svm_desc": "Support Vector Machines are supervised learning models used for classification and regression analysis. [More information](https://es.wikipedia.org/wiki/M%C3%A1quina_de_vectores_de_soporte)",
     "svm_c": "Regularization Parameter (C)",
     "svm_c_help": "The strength of the regularization. Smaller values specify stronger regularization.",
