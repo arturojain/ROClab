@@ -1,4 +1,4 @@
-# README for ROClab, Didactiva's AI/ML Classifiers Lab
+# README for ROClab, OMINIS's AI/ML Classifiers Lab
 
 ## Overview
 
@@ -84,7 +84,7 @@ Using a virtual environment ensures that your project's dependencies are isolate
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/didactiva-ai-lab/ml-classifiers-app.git
+git clone https://github.com/mcquaas/roclab.git
 cd ml-classifiers-app
 ```
 
