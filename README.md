@@ -1,4 +1,4 @@
-# README for ROClab, OMINIS's AI/ML Classifiers Lab
+# README for ROClab, an AI/ML Classifiers Lab
 
 ## Overview
 
