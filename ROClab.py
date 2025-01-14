@@ -19,6 +19,10 @@ import seaborn as sns
 
 st.set_page_config(page_title="Didactiva AI Lab", layout="wide", initial_sidebar_state="expanded")
 
+
+def load_data(file):
+    return pd.read_csv(file)
+
 # Load language files based on user selection
 def load_lang(lang_code):
     with open(f'lang_{lang_code}.json', 'r') as lang_file:
@@ -71,16 +75,25 @@ col_data, col_modelo, col_score = st.columns([3, 3, 2])
 with col_data:
 
     try:
-        # Load the CSV file
+
+        # Subir el archivo CSV
         st.subheader(lang['upload_title'], help=lang['upload_help'])
         uploaded_file = st.file_uploader(lang['upload_prompt'], type='csv')
-        if uploaded_file:
-            df = load_data(uploaded_file)
 
-            # Show a preview of the data
+        # Reset session state si un nuevo archivo es cargado
+        if uploaded_file:
+            
+            if 'df' not in st.session_state or st.session_state['last_uploaded_file'] != uploaded_file:
+                st.session_state.df = load_data(uploaded_file)
+                st.session_state.last_uploaded_file = uploaded_file
+
+            # Asignar el dataframe desde la session state
+            df = st.session_state.df
+
+            # Mostrar una vista previa de los datos
             with st.expander(f"{lang['file_contents']} {len(df)} {lang['records_loaded']} {len(df.columns)} {lang['and']} {lang['columns_loaded']}"):
                 st.write(df.head())
-            
+                
             # Preselect the target column if 'target', 'y', or a binary column exists
             possible_target_columns = ['target', 'y', 'Outcome', 'objective', 'class', 'diagnosis', 'result']
             preselected_target = None
@@ -141,7 +154,8 @@ with col_data:
 with col_modelo:
     
     try:
-        if 'df' in locals():
+        if uploaded_file:
+        # if 'df' in locals():
             
             st.subheader(lang['data_preparation_title'], help=lang['data_preparation_help'])
             # Prepare the data
@@ -348,7 +362,7 @@ with col_score:
             ax.plot([0, 1], [0, 1], linestyle='--', color='gray')
             ax.set_xlabel(lang['fpr_label'])
             ax.set_ylabel(lang['tpr_label'])
-            ax.set_title(lang['roc_curve'])
+            ax.set_title(f"{lang['roc_curve']} (AUC = {roc_auc:.2f})")  # Show AUC in the title
             fig.set_size_inches(4, 3)  # Adjust figure size
             st.pyplot(fig)
 
