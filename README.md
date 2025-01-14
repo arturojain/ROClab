@@ -1,8 +1,8 @@
-# README for Didactiva AI/ML Classifiers Lab
+# README for ROClab, an AI/ML Classifiers Lab
 
 ## Overview
 
-This project provides a web-based application built using **Streamlit** to train and evaluate machine learning classification models. The app is designed as part of **Module 6 of the AI in Health Diploma**, aimed at teaching students how to handle structured numerical data for classification tasks, evaluate performance, and optimize model parameters.
+This project provides a web-based application built using **Streamlit** to train and evaluate machine learning classification models. The app is designed as part of **Module 6 of the AI in Health Diploma**, aimed at teaching students how to handle structured numerical data for classification tasks, evaluate performance, and optimize model parameters. More about [Didactiva](https://didactiva.com)
 
 ## Features
 
@@ -84,7 +84,7 @@ Using a virtual environment ensures that your project's dependencies are isolate
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/didactiva-ai-lab/ml-classifiers-app.git
+git clone https://github.com/mcquaas/roclab.git
 cd ml-classifiers-app
 ```
 
@@ -134,11 +134,11 @@ The following classification algorithms are available in the app:
 
 ## Author
 
-This application was developed by **Gustavo Ross** for the **AI in Health Diploma** hosted by **FUNSALUD** and **Didactiva**.
+This application was made by **Gustavo Ross** for the **AI in Health Diploma** hosted by **FUNSALUD** and **Didactiva**.
 
-For any feedback or inquiries, feel free to contact:
-- Email: gross@funsalud.org.mx
+For any contributions, feedback or inquiries, feel free to contact me:
+- Email: gustavo@didactiva.com
 
 ---
 
-This application is for **educational purposes only** and should not be used for medical decision-making.
+I made this application for **educational purposes only** it should not be used for medical decision-making.
