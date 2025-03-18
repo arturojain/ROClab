@@ -156,5 +156,6 @@
     "column_removed": "Column removed due to encoding issues",
     "yes_no_conversion_error": "Error occurred when converting 'YES' to float",
     "yes_no_conversion_fixed": "The values 'YES'/'NO' have been converted to numeric values",
-    "conversion_required": "It is necessary to convert categorical values (like 'YES'/'NO', 'F'/'M') to numeric format"
+    "conversion_required": "It is necessary to convert categorical values (like 'YES'/'NO', 'F'/'M') to numeric format",
+    "columns_processed": "columns processed"
 }

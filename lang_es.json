@@ -130,11 +130,11 @@
     "license_title": "Licencia GNU GPL v3",
     "show_license": "Mostrar Licencia Pública General de GNU v3",
     
-    "numeric_cols": "Columnas numéricas",
-    "binary_cols": "Columnas binarias",
-    "categorical_cols": "Columnas categóricas",
-    "date_cols": "Columnas de fecha",
-    "text_cols": "Columnas de texto",
+    "numeric_cols": "Variables numéricas",
+    "binary_cols": "Variables binarias",
+    "categorical_cols": "Variables categóricas",
+    "date_cols": "Variables de fecha",
+    "text_cols": "Variables de texto",
     "data_info": "Información de datos",
     "rows": "Filas",
     "columns": "Columnas",
@@ -155,5 +155,6 @@
     "column_removed": "Columna eliminada por problemas de codificación",
     "yes_no_conversion_error": "Ocurrió un error al convertir 'YES' a float",
     "yes_no_conversion_fixed": "Se han convertido los valores 'YES'/'NO' a valores numéricos",
-    "conversion_required": "Es necesario convertir valores categóricos (como 'YES'/'NO', 'F'/'M') a formato numérico"
+    "conversion_required": "Es necesario convertir valores categóricos (como 'YES'/'NO', 'F'/'M') a formato numérico",
+    "columns_processed": "columnas procesadas"
 }

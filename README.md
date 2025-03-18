@@ -28,8 +28,10 @@ Puedes utilizar estos conjuntos de datos públicos para probar la aplicación:
 3. **[Cáncer de Mama](https://www.kaggle.com/datasets/uciml/breast-cancer-wisconsin-data)** - Dataset para clasificar tumores de mama como malignos o benignos.
    - Variable objetivo: `diagnosis` (M o B)
    - 569 instancias, 30 características
-
-> **Nota**: La aplicación está diseñada para trabajar con variables numéricas. Las variables categóricas deben ser codificadas previamente (one-hot encoding, label encoding, etc.).
+  
+4. **[Riesgo Cardiovascular a 10 años] (https://www.kaggle.com/code/bansodesandeep/cardiovascular-risk-prediction/input)**
+   - Variables objetivo: `BPMeds`, `prevalentStroke`, `prevalentHyp`, `diabetes` (1 o 0)
+   - 3390 instancias, 16 características
 
 ## Requisitos
 

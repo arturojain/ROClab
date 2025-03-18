@@ -503,17 +503,27 @@ with col_modelo:
                 st.write(f"📝 {lang.get('text_cols', 'Text columns')}: {len(text_cols)}")
 
             # Procesar variables binarias categóricas (con textos como YES/NO o F/M)
+            processed_columns = []
             for col in binary_cols + categorical_cols:
                 if df[col].dtype == object:  # Si es un tipo texto
                     try:
+                        # Verificar si contiene valores como 'YES'/'NO'
+                        values = df[col].astype(str).str.lower().unique()
+                        yes_no_values = {'yes', 'no', 'y', 'n', 'true', 'false', 't', 'f'}
+                        contains_yes_no = any(val in yes_no_values for val in values)
+                        
+                        if contains_yes_no:
+                            st.info(f"🔄 {lang.get('conversion_required', 'Es necesario convertir valores categóricos')}: {col}")
+                        
                         # Codificar variables binarias y categóricas de texto
                         label_encoder = LabelEncoder()
                         # Convertimos a string para evitar problemas con valores mezclados
                         df[col] = df[col].astype(str)
                         df[col] = label_encoder.fit_transform(df[col])
-                        st.write(f"🔄 {lang.get('encoded_column', 'Columna codificada')}: {col}")
+                        processed_columns.append(col)
+                        st.write(f"✅ {lang.get('encoded_column', 'Columna codificada')}: {col}")
                     except Exception as e:
-                        st.warning(f"Error al codificar columna {col}: {e}")
+                        st.warning(f"⚠️ {lang.get('yes_no_conversion_error', 'Error al convertir')}: {col} - {e}")
                         # Intentar otras estrategias si la codificación falla
                         try:
                             # Intentar convertir a número si es posible
@@ -521,11 +531,15 @@ with col_modelo:
                             # Rellenar valores nulos con la moda
                             if df[col].isnull().sum() > 0:
                                 df[col] = df[col].fillna(df[col].mode()[0])
+                            st.write(f"✅ {lang.get('yes_no_conversion_fixed', 'Valores convertidos')}: {col}")
                         except:
                             # Si todo falla, eliminar la columna del análisis
                             if col in selected_columns:
                                 selected_columns.remove(col)
-                                st.warning(f"{lang.get('column_removed', 'Columna eliminada por problemas de codificación')}: {col}")
+                                st.warning(f"❌ {lang.get('column_removed', 'Columna eliminada')}: {col}")
+            
+            if processed_columns:
+                st.success(f"✅ {len(processed_columns)} {lang.get('columns_processed', 'columnas procesadas')} correctamente.")
 
             # Actualizar los datos seleccionados después del preprocesamiento
             features = df[selected_columns]
