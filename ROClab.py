@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import json
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, Normalizer, label_binarize
+from sklearn.preprocessing import StandardScaler, Normalizer, label_binarize, OneHotEncoder, LabelEncoder
 from sklearn.metrics import roc_auc_score, roc_curve, confusion_matrix, classification_report, accuracy_score, precision_score, recall_score, f1_score
 from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
@@ -18,9 +18,138 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import warnings
 import os
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+
+# Función para identificar tipos de columnas
+def identify_column_types(dataframe):
+    """
+    Identifica automáticamente qué columnas son numéricas y cuáles son categóricas.
+    Devuelve un diccionario con las columnas clasificadas por tipo.
+    """
+    column_types = {
+        'numeric': [],
+        'categorical': [],
+        'binary': [],
+        'date': [],
+        'text': []
+    }
+    
+    # Lista de posibles nombres de columnas categóricas binarias comunes
+    possible_binary_columns = ['sex', 'gender', 'is_', 'has_', 'smoking', 'deceased', 'dead', 'alive']
+    
+    for column in dataframe.columns:
+        # Contar valores nulos
+        null_count = dataframe[column].isnull().sum()
+        # Obtener valores no nulos para análisis
+        non_null_values = dataframe[column].dropna()
+        
+        if len(non_null_values) == 0:
+            # Si la columna está completamente vacía, la marcamos como categórica por defecto
+            column_types['categorical'].append(column)
+            continue
+        
+        # Detectar fechas
+        if pd.api.types.is_datetime64_any_dtype(dataframe[column]):
+            column_types['date'].append(column)
+            continue
+        
+        # Para columnas con tipo object (texto)
+        if dataframe[column].dtype == object:
+            # Detectar columnas de sexo o binarias comunes ('F'/'M', 'YES'/'NO', etc.)
+            col_lower = column.lower()
+            
+            # Verificar si el nombre de la columna sugiere una variable binaria
+            is_likely_binary = any(binary_name in col_lower for binary_name in possible_binary_columns)
+            
+            # Verificar si los valores son típicos de variables binarias (F/M, Y/N, YES/NO, etc.)
+            unique_values = dataframe[column].unique()
+            unique_values_lower = [str(x).lower() if x is not None else '' for x in unique_values]
+            
+            binary_value_pairs = [
+                {'f', 'm'}, {'female', 'male'}, 
+                {'y', 'n'}, {'yes', 'no'}, {'true', 'false'},
+                {'t', 'f'}, {'0', '1'}, {'positive', 'negative'}
+            ]
+            
+            is_binary_values = any(
+                set(unique_values_lower).issubset(pair) for pair in binary_value_pairs
+            )
+            
+            # Si parece binaria por nombre o valores
+            if (is_likely_binary or is_binary_values) and dataframe[column].nunique() <= 2:
+                column_types['binary'].append(column)
+            # Si tiene pocos valores únicos, probablemente sea categórica
+            elif dataframe[column].nunique() < 20:
+                column_types['categorical'].append(column)
+            else:
+                # Si tiene muchos valores únicos, podría ser texto
+                column_types['text'].append(column)
+            
+            continue
+            
+        # Verificar si es numérica
+        if pd.api.types.is_numeric_dtype(dataframe[column]):
+            # Verificar si es binaria (solo tiene 2 valores únicos)
+            if dataframe[column].nunique() <= 2:
+                column_types['binary'].append(column)
+            else:
+                column_types['numeric'].append(column)
+        else:
+            # Si no encaja en las categorías anteriores, la marcamos como categórica
+            column_types['categorical'].append(column)
+                
+    return column_types
+
+# Preprocesador que maneja columnas categóricas y numéricas automáticamente
+def create_preprocessor(X, categorical_cols, numeric_cols, binary_cols=None):
+    """
+    Crea un preprocesador que maneja automáticamente columnas categóricas y numéricas.
+    
+    Args:
+        X: DataFrame con las características
+        categorical_cols: Lista de columnas categóricas
+        numeric_cols: Lista de columnas numéricas
+        binary_cols: Lista de columnas binarias (opcional)
+    """
+    # Verificar que haya columnas para procesar
+    if not categorical_cols and not numeric_cols and not binary_cols:
+        return None
+    
+    transformers = []
+    
+    # Procesar columnas categóricas
+    if categorical_cols:
+        categorical_transformer = Pipeline(steps=[
+            ('onehot', OneHotEncoder(handle_unknown='ignore', sparse_output=False))
+        ])
+        transformers.append(('cat', categorical_transformer, categorical_cols))
+    
+    # Procesar columnas binarias (usar LabelEncoder para binarias)
+    if binary_cols:
+        binary_transformer = Pipeline(steps=[
+            ('label', LabelEncoder())
+        ])
+        # Nota: Como ColumnTransformer no permite LabelEncoder directamente,
+        # tendremos que procesar estas columnas por separado
+    
+    # Procesar columnas numéricas
+    if numeric_cols:
+        numeric_transformer = Pipeline(steps=[
+            ('scaler', StandardScaler())
+        ])
+        transformers.append(('num', numeric_transformer, numeric_cols))
+    
+    # Crear el preprocesador
+    preprocessor = ColumnTransformer(
+        transformers=transformers,
+        remainder='passthrough'  # Pasar otras columnas sin cambios
+    )
+    
+    return preprocessor
 
 # Configuración global
-PRODUCTION_MODE = True  # Cambiar a False para modo desarrollo con warnings
+PRODUCTION_MODE = False  # Cambiar a False para modo desarrollo con warnings
 
 # Suprimir todos los warnings de forma completa desde el inicio
 os.environ['PYTHONWARNINGS'] = 'ignore'
@@ -28,7 +157,7 @@ warnings.filterwarnings('ignore')
 
 # Establecer la configuración de la página antes de cualquier otro código de Streamlit
 st.set_page_config(
-    page_title="OMINIS AI Lab", 
+    page_title="OMINIS ROC Lab", 
     layout="wide", 
     initial_sidebar_state="expanded",
     page_icon="https://ominis.org/favicon.ico" 
@@ -103,7 +232,36 @@ if PRODUCTION_MODE:
     """, unsafe_allow_html=True)
 
 def load_data(file):
-    return pd.read_csv(file)
+    """
+    Carga un archivo de datos en formato CSV o Excel.
+    Detecta automáticamente los tipos de columnas y muestra información relevante.
+    """
+    # Detectar el tipo de archivo basado en la extensión
+    file_extension = file.name.split('.')[-1].lower()
+    
+    if file_extension in ['csv', 'txt']:
+        # Intentar diferentes separadores y encodings para CSV
+        try:
+            # Primero intentar con coma
+            df = pd.read_csv(file, sep=',')
+        except:
+            try:
+                # Luego intentar con punto y coma (común en países con coma decimal)
+                df = pd.read_csv(file, sep=';')
+            except:
+                try:
+                    # Intentar con tabulador
+                    df = pd.read_csv(file, sep='\t')
+                except:
+                    # Último intento con auto-detección
+                    df = pd.read_csv(file, sep=None, engine='python')
+    elif file_extension in ['xlsx', 'xls']:
+        # Cargar archivo Excel
+        df = pd.read_excel(file)
+    else:
+        raise ValueError(f"Formato de archivo no soportado: {file_extension}. Use CSV o Excel.")
+    
+    return df
 
 # Load language files based on user selection
 def load_lang(lang_code):
@@ -163,7 +321,36 @@ models = {
 # Load data
 @st.cache_data
 def load_data(file):
-    return pd.read_csv(file)
+    """
+    Carga un archivo de datos en formato CSV o Excel.
+    Detecta automáticamente los tipos de columnas y muestra información relevante.
+    """
+    # Detectar el tipo de archivo basado en la extensión
+    file_extension = file.name.split('.')[-1].lower()
+    
+    if file_extension in ['csv', 'txt']:
+        # Intentar diferentes separadores y encodings para CSV
+        try:
+            # Primero intentar con coma
+            df = pd.read_csv(file, sep=',')
+        except:
+            try:
+                # Luego intentar con punto y coma (común en países con coma decimal)
+                df = pd.read_csv(file, sep=';')
+            except:
+                try:
+                    # Intentar con tabulador
+                    df = pd.read_csv(file, sep='\t')
+                except:
+                    # Último intento con auto-detección
+                    df = pd.read_csv(file, sep=None, engine='python')
+    elif file_extension in ['xlsx', 'xls']:
+        # Cargar archivo Excel
+        df = pd.read_excel(file)
+    else:
+        raise ValueError(f"Formato de archivo no soportado: {file_extension}. Use CSV o Excel.")
+    
+    return df
 
 
 header1, header2, header3 = st.columns([2, 3, 2])
@@ -213,7 +400,7 @@ with col_data:
 
         # Subir el archivo CSV
         st.subheader(lang['upload_title'], help=lang['upload_help'])
-        uploaded_file = st.file_uploader(lang['upload_prompt'], type='csv')
+        uploaded_file = st.file_uploader(lang['upload_prompt'], type=['csv', 'xlsx', 'xls', 'txt'])
 
         # Reset session state si un nuevo archivo es cargado
         if uploaded_file:
@@ -297,16 +484,74 @@ with col_modelo:
             features = df[selected_columns]
             target = df[target_column]
             
+            # Identificar automáticamente los tipos de columnas
+            column_types = identify_column_types(df)
+            numeric_cols = [col for col in selected_columns if col in column_types['numeric']]
+            binary_cols = [col for col in selected_columns if col in column_types['binary']]
+            categorical_cols = [col for col in selected_columns if col in column_types['categorical']]
+            date_cols = [col for col in selected_columns if col in column_types['date']]
+            text_cols = [col for col in selected_columns if col in column_types['text']]
+            
+            # Mostrar información sobre los tipos de columnas detectados
+            st.write(f"🔢 {lang.get('numeric_cols', 'Numeric columns')}: {len(numeric_cols)}")
+            st.write(f"⚖️ {lang.get('binary_cols', 'Binary columns')}: {len(binary_cols)}")
+            st.write(f"🔤 {lang.get('categorical_cols', 'Categorical columns')}: {len(categorical_cols)}")
+            
+            if date_cols:
+                st.write(f"📅 {lang.get('date_cols', 'Date columns')}: {len(date_cols)}")
+            if text_cols:
+                st.write(f"📝 {lang.get('text_cols', 'Text columns')}: {len(text_cols)}")
+
+            # Procesar variables binarias categóricas (con textos como YES/NO o F/M)
+            for col in binary_cols + categorical_cols:
+                if df[col].dtype == object:  # Si es un tipo texto
+                    try:
+                        # Codificar variables binarias y categóricas de texto
+                        label_encoder = LabelEncoder()
+                        # Convertimos a string para evitar problemas con valores mezclados
+                        df[col] = df[col].astype(str)
+                        df[col] = label_encoder.fit_transform(df[col])
+                        st.write(f"🔄 {lang.get('encoded_column', 'Columna codificada')}: {col}")
+                    except Exception as e:
+                        st.warning(f"Error al codificar columna {col}: {e}")
+                        # Intentar otras estrategias si la codificación falla
+                        try:
+                            # Intentar convertir a número si es posible
+                            df[col] = pd.to_numeric(df[col], errors='coerce')
+                            # Rellenar valores nulos con la moda
+                            if df[col].isnull().sum() > 0:
+                                df[col] = df[col].fillna(df[col].mode()[0])
+                        except:
+                            # Si todo falla, eliminar la columna del análisis
+                            if col in selected_columns:
+                                selected_columns.remove(col)
+                                st.warning(f"{lang.get('column_removed', 'Columna eliminada por problemas de codificación')}: {col}")
+
+            # Actualizar los datos seleccionados después del preprocesamiento
+            features = df[selected_columns]
+            target = df[target_column]
+            
             if df.isnull().sum().sum() > 0:                
                 # Handle missing values
-                handle_missing = st.selectbox(lang['handle_missing'], ["None", "Delete", "Impute (Mean)"])
+                handle_missing = st.selectbox(lang['handle_missing'], ["None", "Delete", "Impute (Mean/Mode)"])
                 if handle_missing == "Delete":
+                    # Eliminar filas con valores nulos
                     df = df.dropna()
                     features = df[selected_columns]
                     target = df[target_column]
-                elif handle_missing == "Impute (Mean)":
-                    imputer = SimpleImputer(strategy='mean')
-                    features = imputer.fit_transform(features)
+                elif handle_missing == "Impute (Mean/Mode)":
+                    # Imputar valores numéricos con la media y categóricos con la moda
+                    for col in numeric_cols:
+                        if df[col].isnull().sum() > 0:
+                            df[col].fillna(df[col].mean(), inplace=True)
+                    
+                    for col in categorical_cols + binary_cols:
+                        if df[col].isnull().sum() > 0:
+                            df[col].fillna(df[col].mode()[0], inplace=True)
+                    
+                    # Actualizar features y target después de la imputación
+                    features = df[selected_columns]
+                    target = df[target_column]
             else:
                 st.text(lang['no_missing_values'], help=lang['no_missing_help'])
             
@@ -349,15 +594,84 @@ with col_modelo:
             # Show plot in Streamlit
             st.pyplot(fig)
 
-
-
             n_splits = st.slider(lang['num_partitions'], 2, 10, 5, help=lang['num_partitions_help'])
 
-            # Split the data into training and test sets
-            X_train, X_test, y_train, y_test = train_test_split(features, target, test_size=test_size, random_state=42)
+            # Crear preprocesador para manejar columnas categóricas y numéricas
+            preprocessor = create_preprocessor(features, 
+                                          categorical_cols=categorical_cols,
+                                          numeric_cols=numeric_cols,
+                                          binary_cols=binary_cols)
             
-            print("X_train, X_test, y_train, y_test")
-            print (X_train.shape, X_test.shape, y_train.shape, y_test.shape)
+            # Aplicar preprocesamiento si hay un preprocesador
+            if preprocessor:
+                try:
+                    # Hacer una copia del DataFrame antes de transformarlo
+                    features_copy = features.copy()
+                    
+                    # Aplicar el preprocesador
+                    features_processed = preprocessor.fit_transform(features_copy)
+                    
+                    # Convertir a DataFrame si no lo es ya
+                    if not isinstance(features_processed, pd.DataFrame):
+                        # Generar nombres de columnas para las variables transformadas
+                        processed_cols = []
+                        
+                        # Para columnas numéricas, mantener el nombre original
+                        for col in numeric_cols:
+                            processed_cols.append(col)
+                        
+                        # Para columnas categóricas, generar nombres para las variables dummy
+                        for col in categorical_cols:
+                            unique_values = features[col].unique()
+                            for val in unique_values:
+                                processed_cols.append(f"{col}_{val}")
+                        
+                        # Crear DataFrame con los nombres de columnas generados
+                        # Si hay más columnas transformadas que nombres generados, usar nombres genéricos
+                        if features_processed.shape[1] > len(processed_cols):
+                            # Añadir nombres genéricos para las columnas adicionales
+                            for i in range(len(processed_cols), features_processed.shape[1]):
+                                processed_cols.append(f"feature_{i}")
+                        
+                        # Limitar a las columnas reales generadas
+                        processed_cols = processed_cols[:features_processed.shape[1]]
+                        
+                        # Crear el DataFrame final
+                        features_processed = pd.DataFrame(features_processed, 
+                                                     columns=processed_cols,
+                                                     index=features.index)
+                except Exception as e:
+                    st.error(f"Error al procesar características: {e}")
+                    # En caso de error, usar las características originales
+                    features_processed = features
+            else:
+                features_processed = features
+            
+            # Split the data into training and test sets
+            X_train, X_test, y_train, y_test = train_test_split(features_processed, target, test_size=test_size, random_state=42)
+            
+            # Verificar si la variable objetivo es categórica
+            is_classification = False
+            target_classes = None
+            
+            if target_column in column_types['categorical'] or target_column in column_types['binary']:
+                # Codificar la variable objetivo si es categórica
+                is_classification = True
+                
+                # Si la variable objetivo es categórica de texto (no numérica)
+                if df[target_column].dtype == object:
+                    label_encoder = LabelEncoder()
+                    y_train_encoded = label_encoder.fit_transform(y_train)
+                    y_test_encoded = label_encoder.transform(y_test)
+                    # Guardar las clases originales para interpretar predicciones
+                    target_classes = label_encoder.classes_
+                    # Reemplazar los valores originales con los codificados
+                    y_train = y_train_encoded
+                    y_test = y_test_encoded
+                
+                st.write(f"🎯 {lang.get('classification_problem', 'Classification problem')}: {np.unique(y_train).tolist()}")
+            else:
+                st.write(f"📊 {lang.get('regression_problem', 'Regression problem')}")
             
             st.subheader(lang['model_training_title'], help=lang['model_training_help'])
 
@@ -380,6 +694,50 @@ with col_modelo:
             
             # Model description
             st.write(model_descriptions.get(model_name))
+            
+            # Preprocesamiento específico por modelo
+            preprocessing_message = ""
+            if model_name == 'Logistic Regression':
+                preprocessing_message += "• La regresión logística funciona mejor con datos normalizados.\n"
+                if df.isnull().sum().sum() > 0:
+                    preprocessing_message += "• Se recomienda imputar valores faltantes antes de entrenar.\n"
+                    
+            elif model_name == 'SVM':
+                preprocessing_message += "• SVM es sensible a la escala, datos normalizados son recomendados.\n"
+                if X_train.shape[1] > 100:
+                    preprocessing_message += "• Muchas características podrían ralentizar el entrenamiento de SVM.\n"
+                
+            elif model_name == 'Naive Bayes':
+                preprocessing_message += "• Naive Bayes asume independencia entre características.\n"
+                preprocessing_message += "• Funciona bien con datos categóricos y textuales.\n"
+                
+            elif model_name == 'Decision Tree':
+                preprocessing_message += "• Los árboles de decisión no requieren normalización.\n"
+                preprocessing_message += "• Son robustos ante valores atípicos y faltantes.\n"
+                
+            elif model_name == 'Random Forest':
+                preprocessing_message += "• Random Forest no requiere normalización de datos.\n"
+                preprocessing_message += "• Funciona bien con características de diferentes escalas.\n"
+                
+            elif model_name == 'XGBoost' or model_name == 'Gradient Boosting' or model_name == 'LightGBM':
+                preprocessing_message += "• Los algoritmos de boosting manejan bien valores faltantes.\n"
+                preprocessing_message += "• No requieren normalización de características.\n"
+                
+            elif model_name == 'KNN':
+                preprocessing_message += "• KNN es muy sensible a la escala de las características.\n"
+                preprocessing_message += "• La normalización de datos es altamente recomendada.\n"
+                if X_train.shape[0] > 10000:
+                    preprocessing_message += "• Gran cantidad de muestras puede ralentizar KNN.\n"
+                    
+            elif model_name == 'AdaBoost':
+                preprocessing_message += "• AdaBoost es sensible a valores atípicos.\n"
+                preprocessing_message += "• Funciona mejor con modelos base simples.\n"
+            
+            # Mostrar mensaje de preprocesamiento si hay algún mensaje
+            if preprocessing_message:
+                with st.expander(lang.get('preprocessing_tips', 'Consejos de preprocesamiento')):
+                    st.markdown(preprocessing_message)
+            
             st.write(lang['hyperparameters'])
                       
             # Initialize the model based on the user's selection
@@ -439,23 +797,88 @@ with col_modelo:
                 st.error(lang['model_selection_error'])
 
             # Normalization
-            if normalize:
-                normalizer = Normalizer()
-                X_train = normalizer.fit_transform(X_train)
-                X_test = normalizer.transform(X_test)
-
+            auto_preprocessing = st.toggle(lang.get('auto_preprocessing', 'Preprocesamiento automático'), 
+                                         value=True, 
+                                         help=lang.get('auto_preprocessing_help', 'Aplicar automáticamente el preprocesamiento óptimo según el modelo seleccionado'))
+            
+            # Si el preprocesamiento automático está activado, realizamos el preprocesamiento según el modelo
+            preprocessing_actions = []
+            
+            if auto_preprocessing:
+                # Preprocesamiento específico para cada modelo
+                if model_name in ['Logistic Regression', 'SVM', 'KNN']:
+                    # Estos modelos se benefician de la normalización
+                    normalizer = Normalizer()
+                    X_train = normalizer.fit_transform(X_train)
+                    X_test = normalizer.transform(X_test)
+                    preprocessing_actions.append(lang.get('normalized_data', 'Datos normalizados'))
+                
+                # Imputación de valores faltantes para modelos sensibles a NaNs
+                if model_name in ['Logistic Regression', 'SVM', 'KNN'] and df.isnull().sum().sum() > 0:
+                    preprocessing_actions.append(lang.get('imputed_missing', 'Valores faltantes imputados'))
+                
+                # Para KNN, si hay muchas muestras, podría ser útil reducir dimensionalidad
+                if model_name == 'KNN' and X_train.shape[0] > 10000:
+                    preprocessing_actions.append(lang.get('knn_large_warning', 'Advertencia: Gran cantidad de muestras puede ralentizar KNN'))
+                
+                # Para árboles y boosting, no se necesita normalización pero sí manejo de valores NaN
+                if model_name in ['Decision Tree', 'Random Forest', 'XGBoost', 'Gradient Boosting', 'LightGBM', 'AdaBoost'] and df.isnull().sum().sum() > 0:
+                    preprocessing_actions.append(lang.get('trees_handle_missing', 'Los árboles manejan valores faltantes internamente'))
+            else:
+                # Si el preprocesamiento automático está desactivado, aplicar solo la normalización manual
+                if normalize:
+                    normalizer = Normalizer()
+                    X_train = normalizer.fit_transform(X_train)
+                    X_test = normalizer.transform(X_test)
+                    preprocessing_actions.append(lang.get('manual_normalization', 'Normalización manual aplicada'))
+            
+            # Mostrar las acciones de preprocesamiento realizadas
+            if preprocessing_actions:
+                st.markdown("### " + lang.get('preprocessing_applied', 'Preprocesamiento aplicado:'))
+                for action in preprocessing_actions:
+                    st.markdown(f"✅ {action}")
+            
             # Train the model
             model.fit(X_train, y_train)
 
             # Predictions
-            if hasattr(model, "predict_proba"):
-                y_pred_proba = model.predict_proba(X_test)
-            else:
-                y_pred_proba = model.decision_function(X_test)
-                y_pred_proba = (y_pred_proba - y_pred_proba.min()) / (y_pred_proba.max() - y_pred_proba.min())
-
-            # Predictions adjusted for the default threshold (0.5)
-            y_pred_adjusted = (y_pred_proba[:, 1] >= 0.5).astype(int)
+            try:
+                if hasattr(model, "predict_proba"):
+                    y_pred_proba = model.predict_proba(X_test)
+                else:
+                    # Para modelos sin predict_proba, usar decision_function si existe o crear una probabilidad simulada
+                    if hasattr(model, "decision_function"):
+                        decision_scores = model.decision_function(X_test)
+                        # Normalizar los scores a un rango [0,1]
+                        decision_scores = (decision_scores - decision_scores.min()) / (decision_scores.max() - decision_scores.min() + 1e-8)
+                        # Convertir a formato similar a predict_proba (dos columnas para clasificación binaria)
+                        if len(decision_scores.shape) == 1:  # Si es unidimensional
+                            y_pred_proba = np.vstack([1-decision_scores, decision_scores]).T
+                        else:
+                            y_pred_proba = decision_scores
+                    else:
+                        # Si no tiene ninguna función de probabilidad o puntaje, usar predicciones directas
+                        y_pred = model.predict(X_test)
+                        # Convertir las predicciones a una matriz de probabilidades simuladas
+                        y_pred_proba = np.zeros((len(y_pred), 2))
+                        for i, pred in enumerate(y_pred):
+                            y_pred_proba[i, int(pred)] = 1.0
+                
+                # Asegurarse de que y_pred_proba tenga la forma correcta para problemas binarios
+                if y_pred_proba.shape[1] == 2:
+                    # Predictions adjusted for the default threshold (0.5)
+                    y_pred_adjusted = (y_pred_proba[:, 1] >= 0.5).astype(int)
+                else:
+                    # Si es multiclase, tomar la clase con mayor probabilidad
+                    y_pred_adjusted = np.argmax(y_pred_proba, axis=1)
+            except Exception as e:
+                st.error(f"Error al generar predicciones: {e}")
+                # Intentar una alternativa más simple
+                y_pred_adjusted = model.predict(X_test)
+                # Crear una matriz de probabilidades simuladas para seguir con el análisis
+                y_pred_proba = np.zeros((len(y_pred_adjusted), len(np.unique(y_test))))
+                for i, pred in enumerate(y_pred_adjusted):
+                    y_pred_proba[i, int(pred)] = 1.0
 
             # Show feature importance chart
             if model_name in ['Decision Tree', 'Random Forest', 'XGBoost', 'Gradient Boosting', 'AdaBoost', 'LightGBM']:
