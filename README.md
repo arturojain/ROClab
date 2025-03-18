@@ -13,6 +13,8 @@ ROC Lab es un laboratorio interactivo para entender y optimizar modelos de clasi
 - Visualizar curvas ROC y matrices de confusión
 - Optimizar el umbral de clasificación
 
+![image](https://github.com/user-attachments/assets/0b62dab4-7e3a-42a4-9340-9e2f80112434)
+
 ## Conjuntos de datos de ejemplo
 
 Puedes utilizar estos conjuntos de datos públicos para probar la aplicación:
