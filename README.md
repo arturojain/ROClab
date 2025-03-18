@@ -1,147 +1,177 @@
-# README for ROClab, an AI/ML Classifiers Lab
+# ROC Lab
 
-## Overview
+Una aplicación interactiva para la optimización de modelos de clasificación.
 
-This project provides a web-based application built using **Streamlit** to train and evaluate machine learning classification models. The app is designed as part of **Module 6 of the AI in Health Diploma**, aimed at teaching students how to handle structured numerical data for classification tasks, evaluate performance, and optimize model parameters. More about [Didactiva](https://didactiva.com)
+## Descripción
 
-![image](https://github.com/user-attachments/assets/c9af9d2b-94a6-48e6-a295-f6c46c058e59)
+ROC Lab es un laboratorio interactivo para entender y optimizar modelos de clasificación utilizando curvas ROC. Esta herramienta te permite:
 
+- Cargar tus propios datos CSV con variables numéricas
+- Explorar visualmente los datos, correlaciones y distribuciones
+- Probar diferentes modelos de machine learning (Regresión Logística, SVM, Random Forest, etc.)
+- Ajustar hiperparámetros y ver cómo afectan al rendimiento
+- Visualizar curvas ROC y matrices de confusión
+- Optimizar el umbral de clasificación
 
-## Features
+## Conjuntos de datos de ejemplo
 
-1. **Data Upload**: Users can upload structured CSV files containing features and a target column for classification.
-2. **Exploratory Data Analysis**: Users can explore the uploaded data, view statistical summaries, correlations, and generate visualizations.
-3. **Data Preprocessing**: Options to handle missing values, normalize data, or apply outlier detection.
-4. **Model Training**: Users can select from a wide variety of machine learning classifiers, adjust model hyperparameters, and train the model on the uploaded dataset.
-5. **Model Evaluation**: After training, the app provides evaluation metrics such as ROC curve, confusion matrix, accuracy, precision, recall, F1-score, and other relevant metrics.
+Puedes utilizar estos conjuntos de datos públicos para probar la aplicación:
 
-## Example Datasets
+1. **[Diabetes de Pima Indians](https://www.kaggle.com/datasets/uciml/pima-indians-diabetes-database)** - Dataset para predecir si un paciente tiene diabetes basado en medidas diagnósticas.
+   - Variable objetivo: `Outcome` (0 o 1)
+   - 768 instancias, 8 variables numéricas
 
-You can use the following datasets to practice with this app:
+2. **[Enfermedad Cardiovascular](https://www.kaggle.com/datasets/sulianova/cardiovascular-disease-dataset)** - Dataset para predecir enfermedad cardiovascular.
+   - Variable objetivo: `cardio` (0 o 1)
+   - 70,000 instancias, 11 variables
 
-1. **[Cardiovascular Disease Dataset](https://www.kaggle.com/datasets/jocelyndumlao/cardiovascular-disease-dataset?resource=download)**:
-   - This dataset contains cardiovascular disease data. It can be used to predict the presence of heart-related diseases based on features like age, cholesterol levels, and blood pressure.
-   
-2. **[Pima Indians Diabetes Dataset](https://www.kaggle.com/datasets/uciml/pima-indians-diabetes-database)**:
-   - This dataset is used for diabetes prediction and contains health metrics of Pima Indians. Features include glucose levels, BMI, and family history.
-   
-3. **[Breast Cancer Prediction Dataset](https://www.kaggle.com/datasets/merishnasuwal/breast-cancer-prediction-dataset)**:
-   - This dataset contains data for breast cancer prediction, which can be used to classify whether a tumor is malignant or benign based on features like the size and texture of cell nuclei.
+3. **[Cáncer de Mama](https://www.kaggle.com/datasets/uciml/breast-cancer-wisconsin-data)** - Dataset para clasificar tumores de mama como malignos o benignos.
+   - Variable objetivo: `diagnosis` (M o B)
+   - 569 instancias, 30 características
 
-## Dependencies
+> **Nota**: La aplicación está diseñada para trabajar con variables numéricas. Las variables categóricas deben ser codificadas previamente (one-hot encoding, label encoding, etc.).
 
-The following Python libraries are used in this project:
+## Requisitos
 
-```bash
-streamlit
-pandas
-numpy
-scikit-learn
-xgboost
-lightgbm
-matplotlib
-seaborn
-```
+- Python 3.7 o superior
+- Dependencias listadas en `requirements.txt`
 
+## Instalación y ejecución
 
-## Setting Up a Virtual Environment (Optional)
+Tienes dos opciones para instalar y ejecutar ROClab:
 
-To create a virtual environment (venv) for your project, follow these steps:
+### Método automático (recomendado)
 
-1. **Navigate to your project directory**:
+Este método automatiza todo el proceso de configuración y es la forma más sencilla de comenzar.
+
+1. Clona o descarga este repositorio:
    ```bash
-   cd /path/to/your/project
+   git clone https://github.com/mcquaas/ROClab.git
+   cd ROClab
    ```
 
-2. **Create a virtual environment**:
+2. Dale permisos de ejecución al script de instalación:
    ```bash
-   python3 -m venv venv
+   chmod +x setup.sh
    ```
 
-3. **Activate the virtual environment**:
+3. Ejecuta el script de instalación:
+   ```bash
+   ./setup.sh
+   ```
 
-   - On **Linux/macOS**:
-     ```bash
-     source venv/bin/activate
-     ```
-   - On **Windows**:
-     ```bash
-     .\venv\Scripts\activate
-     ```
+El script de instalación realizará automáticamente las siguientes tareas:
+- Detectará tu sistema operativo (macOS, Linux, Windows)
+- Verificará que Python esté instalado
+- Creará un entorno virtual para aislar las dependencias
+- Instalará todas las bibliotecas necesarias
+- Creará un script de ejecución personalizado para tu sistema
+- Te ofrecerá la opción de iniciar la aplicación inmediatamente
 
-4. **Install the required dependencies**:
+> **Nota para usuarios con rutas especiales**: Si la ruta de tu proyecto contiene caracteres especiales como dos puntos (:), el script creará el entorno virtual en tu directorio home en lugar del directorio del proyecto.
+
+### Método manual
+
+Si prefieres configurar manualmente la aplicación, sigue estos pasos:
+
+1. Clona o descarga este repositorio:
+   ```bash
+   git clone https://github.com/mcquaas/ROClab.git
+   cd ROClab
+   ```
+
+2. Crea un entorno virtual:
+   ```bash
+   # En sistemas con rutas normales (sin caracteres especiales)
+   python3 -m venv .venv
+   
+   # En sistemas con rutas que contienen caracteres especiales
+   python3 -m venv ~/roclab_venv
+   ```
+
+3. Activa el entorno virtual:
+   ```bash
+   # En macOS/Linux para .venv local
+   source .venv/bin/activate
+   
+   # En macOS/Linux para entorno en el directorio home
+   source ~/roclab_venv/bin/activate
+   
+   # En Windows para .venv local
+   .venv\Scripts\activate
+   
+   # En Windows para entorno en el directorio home
+   %USERPROFILE%\roclab_venv\Scripts\activate
+   ```
+
+4. Instala las dependencias:
    ```bash
    pip install -r requirements.txt
    ```
 
-5. **Deactivate the environment** when done:
+5. Ejecuta la aplicación:
    ```bash
-   deactivate
+   streamlit run ROClab.py
    ```
 
-Using a virtual environment ensures that your project's dependencies are isolated and do not affect system-wide packages.
+## Uso
 
+1. Una vez iniciada la aplicación, abre tu navegador en la dirección que indica Streamlit (normalmente http://localhost:8501)
+2. Carga un archivo CSV con datos estructurados
+3. Selecciona la variable objetivo y las variables predictivas
+4. Explora los datos y entrena los diferentes modelos
+5. Analiza el rendimiento y ajusta los parámetros según sea necesario
 
-## Installation without venv
+## Solución de problemas comunes
 
-1. Clone the repository:
+### Error al crear el entorno virtual
 
-```bash
-git clone https://github.com/mcquaas/roclab.git
-cd ml-classifiers-app
-```
+Si encuentras un error como `Error: Refusing to create a venv in ... because it contains the PATH separator :`, significa que la ruta de tu directorio contiene caracteres especiales. Intenta:
 
-2. Install the required dependencies:
+1. Usar el script automático `setup.sh` que detectará este problema y creará el entorno en tu directorio home
+2. O crear manualmente el entorno virtual en tu directorio home:
+   ```bash
+   python3 -m venv ~/roclab_venv
+   source ~/roclab_venv/bin/activate
+   ```
+
+### Módulos no encontrados
+
+Si recibes errores del tipo `ModuleNotFoundError: No module named 'xgboost'` u otros módulos, ejecuta:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Run the application:
+### Error en el archivo JSON de idioma
+
+Si ves un error como `json.decoder.JSONDecodeError`, puede haber un problema con los archivos de idioma. Verifica que los archivos `lang_es.json` y `lang_en.json` estén correctamente formateados. Son archivos JSON válidos que no deben contener errores de sintaxis.
+
+### Cambio de idioma
+
+- Para cambiar el idioma a través de la interfaz: usa el selector en la esquina superior derecha
+- Para cambiar el idioma a través de la URL: añade `?lang=en` o `?lang=es` al final de la URL
+
+### Watchdog no instalado
+
+Si ves una advertencia sobre instalar Watchdog para un mejor rendimiento, puedes seguir las instrucciones:
 
 ```bash
-streamlit run app.py
+xcode-select --install  # Solo en macOS
+pip install watchdog
 ```
 
-## Instructions for Use
+## Características
 
-1. **Upload Data**: Load a CSV file that includes a target column for classification and the features. Please note this lab does not (yet) handle categorical vars (just numerical). Contributions to add var encodings (label, one-hot, target, count, etc) are very welcome! you might also want to remove a couple of unnecessary columns. 
-2. **Exploratory Data Analysis**: 
-   - Explore variable distributions.
-   - View correlation heatmaps.
-   - Generate pair plots for visual insights.
-3. **Data Preparation**:
-   - Choose how to handle missing values (drop or impute).
-   - Normalize data if needed.
-   - Select relevant features for the model.
-4. **Train Models**: Choose from various classification models such as Logistic Regression, Random Forest, XGBoost, and more.
-5. **Model Evaluation**:
-   - Visualize the ROC curve.
-   - Adjust the decision threshold.
-   - View the confusion matrix and performance metrics.
+- **Multilingüe**: Puedes cambiar entre español e inglés con el selector en la parte superior o mediante el parámetro en la URL: `?lang=en` o `?lang=es`.
+- **Visualización avanzada**: Incluye matrices de correlación, distribuciones, curvas ROC y matrices de confusión.
+- **Múltiples modelos**: Logistic Regression, KNN, Naive Bayes, SVM, Decision Tree, Random Forest, XGBoost, Gradient Boosting, AdaBoost, LightGBM.
+- **Métricas de rendimiento**: Accuracy, precision, recall, F1-score, AUC, sensibilidad, especificidad.
 
-## Available Models
+## Licencia
 
-The following classification algorithms are available in the app:
+Este proyecto está licenciado bajo GNU General Public License v3.0 - ver el archivo `LICENSE` para más detalles.
 
-- Logistic Regression
-- K-Nearest Neighbors (KNN)
-- Naive Bayes
-- Support Vector Machines (SVM)
-- Decision Tree
-- Random Forest
-- XGBoost
-- Gradient Boosting
-- AdaBoost
-- LightGBM
+## Contacto
 
-## Author
-
-This application was made by **Gustavo Ross** for the **AI in Health Diploma** hosted by **FUNSALUD** and **Didactiva**.
-
-For any contributions, feedback or inquiries, feel free to contact me:
-- Email: gustavo@didactiva.com
-
----
-
-I made this application for **educational purposes only** it should not be used for medical decision-making.
+Gustavo Ross - gross@funsalud.org.mx

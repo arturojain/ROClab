@@ -127,7 +127,7 @@
     "actual_label": "Actual",
     "performance_metrics_help": "Performance Metrics",
     "testing": "Testing",
-    "footer": "This software is open under the GNU General Public License, version 3. You may redistribute and/or modify it under the terms of this license. This software is provided 'as-is' without any warranty of any kind. See the GNU General Public License for more details. You can access the source code [here](https://github.com/mcquaas/ROClab) or request it by contacting gross@funsalud.org.mx.",
+    "footer": "This software is open under the GNU General Public License, version 3. You may redistribute and/or modify it under the terms of this license. This software is provided 'as-is' without any warranty of any kind. See the GNU General Public License for more details. You can access the source code [here](https://github.com/mcquaas/ROClab) or request it by contacting Gustavo directly: gross@funsalud.org.mx.",
     "license_title": "Licensed under GNU GPL v3",
     "show_license": "Show GPL v3 License"
 }

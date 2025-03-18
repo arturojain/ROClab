@@ -34,7 +34,6 @@ def load_lang(lang_code):
         return json.load(lang_file)
 
 # Obtener parámetros de URL
-# query_params = st.experimental_get_query_params()
 # Uso de la API actualizada de query_params
 
 # Establecer el código de idioma desde parámetros de URL o utilizar el valor predeterminado
@@ -48,7 +47,6 @@ def change_language():
     selected_language = st.session_state.language_selector
     language_options = {"Español": "es", "English": "en"}
     new_lang = language_options[selected_language]
-    # st.experimental_set_query_params(lang=new_lang)
     st.query_params['lang'] = new_lang
     st.rerun()
 
