@@ -507,37 +507,77 @@ with col_modelo:
             for col in binary_cols + categorical_cols:
                 if df[col].dtype == object:  # Si es un tipo texto
                     try:
-                        # Verificar si contiene valores como 'YES'/'NO'
+                        # Verificar si contiene valores como 'YES'/'NO' o 'F'/'M'
                         values = df[col].astype(str).str.lower().unique()
                         yes_no_values = {'yes', 'no', 'y', 'n', 'true', 'false', 't', 'f'}
+                        male_female_values = {'f', 'm', 'female', 'male', 'mujer', 'hombre', 'h', 'woman', 'man'}
+                        
                         contains_yes_no = any(val in yes_no_values for val in values)
+                        contains_gender = any(val in male_female_values for val in values)
                         
                         if contains_yes_no:
-                            st.info(f"🔄 {lang.get('conversion_required', 'Es necesario convertir valores categóricos')}: {col}")
+                            st.info(f"🔄 {lang.get('yes_no_conversion', 'Convirtiendo valores SÍ/NO')}: {col}")
+                        elif contains_gender:
+                            st.info(f"🔄 {lang.get('gender_conversion', 'Convirtiendo valores de género')}: {col}")
+                        
+                        # Convertir a string primero para asegurar que LabelEncoder funcione correctamente
+                        df[col] = df[col].astype(str)
                         
                         # Codificar variables binarias y categóricas de texto
                         label_encoder = LabelEncoder()
-                        # Convertimos a string para evitar problemas con valores mezclados
-                        df[col] = df[col].astype(str)
                         df[col] = label_encoder.fit_transform(df[col])
                         processed_columns.append(col)
-                        st.write(f"✅ {lang.get('encoded_column', 'Columna codificada')}: {col}")
+                        
+                        # Mostrar mapeo de valores para referencia del usuario
+                        mapping = dict(zip(label_encoder.classes_, label_encoder.transform(label_encoder.classes_)))
+                        st.write(f"✅ {lang.get('encoded_column', 'Columna codificada')}: {col} → {mapping}")
+                        
                     except Exception as e:
-                        st.warning(f"⚠️ {lang.get('yes_no_conversion_error', 'Error al convertir')}: {col} - {e}")
-                        # Intentar otras estrategias si la codificación falla
+                        st.warning(f"⚠️ {lang.get('conversion_error', 'Error al convertir')}: {col} - {str(e)}")
+                        
+                        # Plan alternativo: mapeo manual
                         try:
-                            # Intentar convertir a número si es posible
-                            df[col] = pd.to_numeric(df[col], errors='coerce')
-                            # Rellenar valores nulos con la moda
-                            if df[col].isnull().sum() > 0:
-                                df[col] = df[col].fillna(df[col].mode()[0])
-                            st.write(f"✅ {lang.get('yes_no_conversion_fixed', 'Valores convertidos')}: {col}")
-                        except:
+                            # Para sexo/género
+                            if col.lower() in ['sex', 'gender', 'sexo', 'genero', 'género']:
+                                # Crear un diccionario de mapeo
+                                gender_map = {
+                                    'f': 0, 'female': 0, 'mujer': 0, 'm': 1, 'male': 1, 'hombre': 1,
+                                    'woman': 0, 'man': 1, 'F': 0, 'M': 1, 'FEMALE': 0, 'MALE': 1
+                                }
+                                df[col] = df[col].map(gender_map)
+                                if df[col].isnull().sum() > 0:
+                                    # Si hay valores no mapeados, rellenar con la moda
+                                    df[col] = df[col].fillna(df[col].mode()[0])
+                                st.success(f"✅ {lang.get('manual_gender_conversion', 'Valores de género convertidos manualmente')}: {col}")
+                            
+                            # Para yes/no
+                            elif any(val.lower() in yes_no_values for val in df[col].dropna().astype(str).unique()):
+                                yes_no_map = {
+                                    'yes': 1, 'y': 1, 'true': 1, 't': 1, '1': 1, 'si': 1, 'sí': 1,
+                                    'no': 0, 'n': 0, 'false': 0, 'f': 0, '0': 0,
+                                    'YES': 1, 'Y': 1, 'TRUE': 1, 'T': 1, 'SI': 1, 'SÍ': 1,
+                                    'NO': 0, 'N': 0, 'FALSE': 0, 'F': 0
+                                }
+                                df[col] = df[col].map(yes_no_map)
+                                if df[col].isnull().sum() > 0:
+                                    df[col] = df[col].fillna(df[col].mode()[0])
+                                st.success(f"✅ {lang.get('manual_yes_no_conversion', 'Valores SÍ/NO convertidos manualmente')}: {col}")
+                            
+                            # Último intento: convertir a números si es posible
+                            else:
+                                df[col] = pd.to_numeric(df[col], errors='coerce')
+                                if df[col].isnull().sum() > 0:
+                                    df[col] = df[col].fillna(df[col].mode()[0])
+                                st.info(f"ℹ️ {lang.get('numeric_conversion', 'Columna convertida a numérica')}: {col}")
+                            
+                            processed_columns.append(col)
+                            
+                        except Exception as e2:
                             # Si todo falla, eliminar la columna del análisis
                             if col in selected_columns:
                                 selected_columns.remove(col)
-                                st.warning(f"❌ {lang.get('column_removed', 'Columna eliminada')}: {col}")
-            
+                                st.error(f"❌ {lang.get('column_removed', 'Columna eliminada')}: {col} - {str(e2)}")
+
             if processed_columns:
                 st.success(f"✅ {len(processed_columns)} {lang.get('columns_processed', 'columnas procesadas')} correctamente.")
 

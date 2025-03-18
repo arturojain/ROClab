@@ -156,5 +156,12 @@
     "yes_no_conversion_error": "Ocurrió un error al convertir 'YES' a float",
     "yes_no_conversion_fixed": "Se han convertido los valores 'YES'/'NO' a valores numéricos",
     "conversion_required": "Es necesario convertir valores categóricos (como 'YES'/'NO', 'F'/'M') a formato numérico",
-    "columns_processed": "columnas procesadas"
+    "columns_processed": "columnas procesadas",
+    
+    "yes_no_conversion": "Convirtiendo valores SÍ/NO",
+    "gender_conversion": "Convirtiendo valores de género",
+    "conversion_error": "Error al convertir",
+    "manual_gender_conversion": "Valores de género convertidos manualmente",
+    "manual_yes_no_conversion": "Valores SÍ/NO convertidos manualmente",
+    "numeric_conversion": "Columna convertida a numérica"
 }
