@@ -13,6 +13,9 @@ ROC Lab is an interactive laboratory for understanding and optimizing classifica
 - Visualize ROC curves and confusion matrices
 - Optimize the classification threshold
 
+  ![image](https://github.com/user-attachments/assets/843323bc-75f2-4699-97fe-c9da8688ab07)
+
+
 ## Sample Datasets
 
 You can use these public datasets to test the application:
