@@ -16,14 +16,91 @@ from sklearn.impute import SimpleImputer
 import lightgbm as lgb
 import matplotlib.pyplot as plt
 import seaborn as sns
+import warnings
+import os
 
+# Configuración global
+PRODUCTION_MODE = True  # Cambiar a False para modo desarrollo con warnings
+
+# Suprimir todos los warnings de forma completa desde el inicio
+os.environ['PYTHONWARNINGS'] = 'ignore'
+warnings.filterwarnings('ignore')
+
+# Establecer la configuración de la página antes de cualquier otro código de Streamlit
 st.set_page_config(
     page_title="OMINIS AI Lab", 
     layout="wide", 
     initial_sidebar_state="expanded",
     page_icon="https://ominis.org/favicon.ico" 
-    )
+)
 
+# Personalizar tema para modo producción (antes de cualquier renderizado)
+primary_color = "#4682B4"  # Azul OMINIS
+background_color = "#F0F2F6"
+secondary_background_color = "#FFFFFF"
+text_color = "#262730"
+font = "sans-serif"
+
+# Aplicar modo de producción: ocultar elementos y personalizar CSS
+if PRODUCTION_MODE:
+    # CSS para ocultar elementos y personalizar la apariencia
+    st.markdown("""
+    <style>
+    /* Ocultar elementos de depuración y desarrollo */
+    #MainMenu {visibility: hidden !important;}
+    footer {visibility: hidden !important;}
+    .stDeployButton {display: none !important;}
+    .viewerBadge_container__1QSob {display: none !important;}
+    div[data-testid="stToolbar"] {visibility: hidden !important;}
+    div[data-testid="stDecoration"] {visibility: hidden !important;}
+    div[data-testid="stStatusWidget"] {visibility: hidden !important;}
+    
+    /* Warning messages */
+    div.stWarning {display: none !important;}
+    
+    /* Ocultar específicamente el mensaje sobre language_selector */
+    div[data-testid="stAppMessageContainer"] {display: none !important;}
+    .element-container div[data-testid="stNotification"] {display: none !important;}
+    div.stException {display: none !important;}
+    
+    /* Ocultar mensaje de 'Calling st.rerun() within a callback' */
+    .stAlert {display: none !important;}
+    div[data-baseweb="notification"] {display: none !important;}
+    div[data-testid="callbackError"] {display: none !important;}
+    div.stWarningMsg {display: none !important;}
+    
+    /* Mejorar los estilos de los widgets */
+    div.stButton > button {
+        background-color: #4682B4;
+        color: white;
+        border-radius: 4px;
+        border: none;
+        padding: 8px 16px;
+        font-weight: bold;
+    }
+    div.stButton > button:hover {
+        background-color: #3A6EA5;
+    }
+    
+    /* Mejorar apariencia de los selectores */
+    div.stSelectbox > div > div {
+        background-color: white;
+        border-radius: 4px;
+    }
+    
+    /* Mejorar apariencia de los sliders */
+    div.stSlider > div {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    /* Mejorar aspecto general */
+    .reportview-container .main .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 def load_data(file):
     return pd.read_csv(file)
@@ -37,18 +114,29 @@ def load_lang(lang_code):
 # Uso de la API actualizada de query_params
 
 # Establecer el código de idioma desde parámetros de URL o utilizar el valor predeterminado
-if 'lang' in st.query_params and st.query_params['lang'] in ['es', 'en']:
-    lang_code = st.query_params['lang']
-else:
-    lang_code = 'es'  # Valor predeterminado
+try:
+    # Obtener el parámetro de idioma de la URL
+    if 'lang' in st.query_params and st.query_params['lang'] in ['es', 'en']:
+        lang_code = st.query_params['lang']
+    else:
+        lang_code = 'es'  # Valor predeterminado
+except Exception as e:
+    # En caso de error con query_params, usar el valor predeterminado
+    if not PRODUCTION_MODE:
+        st.warning(f"Error al obtener parámetros de URL: {e}")
+    lang_code = 'es'
 
-# Función para cambiar el idioma
+# Función para cambiar el idioma - evitamos usar st.rerun() directamente
 def change_language():
-    selected_language = st.session_state.language_selector
-    language_options = {"Español": "es", "English": "en"}
-    new_lang = language_options[selected_language]
-    st.query_params['lang'] = new_lang
-    st.rerun()
+    try:
+        selected_language = st.session_state.language_selector
+        language_options = {"Español": "es", "English": "en"}
+        new_lang = language_options[selected_language]
+        # Solo actualizamos el parámetro de URL sin llamar a rerun()
+        st.query_params['lang'] = new_lang
+    except Exception as e:
+        if not PRODUCTION_MODE:
+            st.warning(f"Error al cambiar el idioma: {e}")
 
 # Guardar el código de idioma en session_state para que el selector muestre el valor correcto
 language_options_reverse = {"es": "Español", "en": "English"}
@@ -81,16 +169,29 @@ def load_data(file):
 header1, header2, header3 = st.columns([2, 3, 2])
 with header1:
     st.image('https://funsalud.org.mx/wp-content/uploads/2022/09/logotipo.png', width=200)
+    st.markdown("<div style='text-align: left;'><a href='https://www.ominis.org' target='_blank' style='color: #4682B4; text-decoration: none; margin-left: 30px;'>www.ominis.org</a></div>", unsafe_allow_html=True)
 with header2:
     st.title(lang['title'])
     st.write(lang['subtitle'])
 with header3:
-    # Selector de idioma
+    # Selector de idioma con enfoque sin usar callbacks que llamen a rerun()
     language_options = {"Español": "es", "English": "en"}
-    st.selectbox("Idioma / Language", options=list(language_options.keys()), 
-                index=list(language_options.keys()).index(language_options_reverse[lang_code]),
-                key="language_selector",
-                on_change=change_language)
+    current_language = language_options_reverse.get(lang_code, "Español")
+    
+    # Si el idioma cambia, actualizamos la URL directamente con un enlace
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        if current_language != "Español":
+            st.markdown(f'<a href="?lang=es" target="_self" style="text-decoration: none; color: #4682B4;">🇪🇸 Español</a>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<span style="font-weight: bold;">🇪🇸 Español</span>', unsafe_allow_html=True)
+    
+    with col2:
+        if current_language != "English":
+            st.markdown(f'<a href="?lang=en" target="_self" style="text-decoration: none; color: #4682B4;">🇬🇧 English</a>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<span style="font-weight: bold;">🇬🇧 English</span>', unsafe_allow_html=True)
     
     # Instructions in an expander at the right column's end
     with st.expander(lang['instructions_title']):
@@ -230,9 +331,13 @@ with col_modelo:
 
             fig, ax = plt.subplots(figsize=(6, 1))  # Adjust the figure size as needed
 
-            # Horizontal stacked bar with blue and green colors
-            ax.barh('Samples', sample_counts[lang['training']], color='blue', label=f"{lang['training']}: {sample_counts[lang['training']]}")
-            ax.barh('Samples', sample_counts[lang['testing']], left=sample_counts[lang['training']], color='green', label=f"{lang['testing']}: {sample_counts[lang['testing']]}")
+            # Definimos colores OMINIS 
+            ominis_blue = "#4682B4"  # Azul principal de OMINIS
+            ominis_lightblue = "#6699CC"  # Azul claro
+            
+            # Horizontal stacked bar con los colores de OMINIS
+            ax.barh('Samples', sample_counts[lang['training']], color=ominis_blue, label=f"{lang['training']}: {sample_counts[lang['training']]}")
+            ax.barh('Samples', sample_counts[lang['testing']], left=sample_counts[lang['training']], color=ominis_lightblue, label=f"{lang['testing']}: {sample_counts[lang['testing']]}")
 
             # Adding labels to each section
             ax.text(sample_counts[lang['training']] / 2, 0, f"{lang['training']}: {sample_counts[lang['training']]}", va='center', ha='center', color='white')
@@ -363,7 +468,8 @@ with col_modelo:
                     top_features = [selected_columns[i] for i in sorted_idx]
                     top_importances = feature_importances[sorted_idx]
 
-                    ax.barh(top_features, top_importances)
+                    # Usar color OMINIS para las barras
+                    ax.barh(top_features, top_importances, color="#4682B4")
                     ax.set_xlabel(lang['importance'])
                     fig.set_size_inches(3, 2)
                     
@@ -392,7 +498,7 @@ with col_score:
 
             # Plot the ROC curve
             fig, ax = plt.subplots()
-            ax.plot(fpr, tpr, label=f"{lang['roc_curve']} (area = {roc_auc:.2f})")
+            ax.plot(fpr, tpr, label=f"{lang['roc_curve']} (area = {roc_auc:.2f})", color="#4682B4")  # Color OMINIS
             ax.plot([0, 1], [0, 1], linestyle='--', color='gray')
             ax.set_xlabel(lang['fpr_label'])
             ax.set_ylabel(lang['tpr_label'])
@@ -414,7 +520,7 @@ with col_score:
             cm = confusion_matrix(y_test, y_pred_adjusted)
             st.text(lang['confusion_matrix'], help=lang['confusion_matrix_help'])
             fig, ax = plt.subplots()
-            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)
+            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax)  # Blues se mantiene, coincide con la paleta OMINIS
             ax.set_xlabel(lang['predicted_label'])
             ax.set_ylabel(lang['actual_label'])
             fig.set_size_inches(3, 2)  # Adjust figure size
