@@ -1,8 +1,11 @@
-# README for ROClab, OMINIS's AI/ML Classifiers Lab
+# README for ROClab, an AI/ML Classifiers Lab
 
 ## Overview
 
 This project provides a web-based application built using **Streamlit** to train and evaluate machine learning classification models. The app is designed as part of **Module 6 of the AI in Health Diploma**, aimed at teaching students how to handle structured numerical data for classification tasks, evaluate performance, and optimize model parameters. More about [Didactiva](https://didactiva.com)
+
+![image](https://github.com/user-attachments/assets/c9af9d2b-94a6-48e6-a295-f6c46c058e59)
+
 
 ## Features
 
