@@ -17,15 +17,43 @@ import lightgbm as lgb
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-st.set_page_config(page_title="Didactiva AI Lab", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(
+    page_title="OMINIS AI Lab", 
+    layout="wide", 
+    initial_sidebar_state="expanded",
+    page_icon="https://ominis.org/favicon.ico" 
+    )
 
 # Load language files based on user selection
 def load_lang(lang_code):
     with open(f'lang_{lang_code}.json', 'r') as lang_file:
         return json.load(lang_file)
 
-# Radio button for language selection
-lang_code = st.radio("Choose language", ['es', 'en'], index=0)
+# Obtener parámetros de URL
+# query_params = st.experimental_get_query_params()
+# Uso de la API actualizada de query_params
+
+# Establecer el código de idioma desde parámetros de URL o utilizar el valor predeterminado
+if 'lang' in st.query_params and st.query_params['lang'] in ['es', 'en']:
+    lang_code = st.query_params['lang']
+else:
+    lang_code = 'es'  # Valor predeterminado
+
+# Función para cambiar el idioma
+def change_language():
+    selected_language = st.session_state.language_selector
+    language_options = {"Español": "es", "English": "en"}
+    new_lang = language_options[selected_language]
+    # st.experimental_set_query_params(lang=new_lang)
+    st.query_params['lang'] = new_lang
+    st.rerun()
+
+# Guardar el código de idioma en session_state para que el selector muestre el valor correcto
+language_options_reverse = {"es": "Español", "en": "English"}
+if 'language_selector' not in st.session_state:
+    st.session_state.language_selector = language_options_reverse[lang_code]
+
+# Cargar el archivo de idioma
 lang = load_lang(lang_code)
 
 # Define available models
@@ -47,13 +75,21 @@ models = {
 def load_data(file):
     return pd.read_csv(file)
 
+
 header1, header2, header3 = st.columns([2, 3, 2])
 with header1:
-    st.image('https://www.didactiva.com/wp-content/uploads/2024/06/logo-didactiva-20.png', width=200)
+    st.image('https://funsalud.org.mx/wp-content/uploads/2022/09/logotipo.png', width=200)
 with header2:
     st.title(lang['title'])
     st.write(lang['subtitle'])
 with header3:
+    # Selector de idioma
+    language_options = {"Español": "es", "English": "en"}
+    st.selectbox("Idioma / Language", options=list(language_options.keys()), 
+                index=list(language_options.keys()).index(language_options_reverse[lang_code]),
+                key="language_selector",
+                on_change=change_language)
+    
     # Instructions in an expander at the right column's end
     with st.expander(lang['instructions_title']):
         for instruction in lang['instructions']:
@@ -403,3 +439,14 @@ with col_score:
 
         st.text(lang['performance_metrics_table'], help=lang['performance_metrics_help'])
         st.dataframe(performance_metrics)
+
+# Footer
+st.divider()
+st.write(lang["footer"])
+# Modal for displaying LICENSE file
+with open('LICENSE', 'r') as license_file:
+    license_text = license_file.read()
+
+if st.button(lang['show_license']):
+    st.text_area(lang['license_title'], license_text, height=300)
+
