@@ -31,7 +31,7 @@ Puedes utilizar estos conjuntos de datos públicos para probar la aplicación:
    - Variable objetivo: `diagnosis` (M o B)
    - 569 instancias, 30 características
   
-4. **[Riesgo Cardiovascular a 10 años] (https://www.kaggle.com/code/bansodesandeep/cardiovascular-risk-prediction/input)**
+4. **[Riesgo Cardiovascular a 10 años](https://www.kaggle.com/code/bansodesandeep/cardiovascular-risk-prediction/input)**
    - Variables objetivo: `BPMeds`, `prevalentStroke`, `prevalentHyp`, `diabetes` (1 o 0)
    - 3390 instancias, 16 características
 
