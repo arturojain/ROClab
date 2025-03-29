@@ -413,7 +413,7 @@ with col_data:
             df = st.session_state.df
 
             # Mostrar una vista previa de los datos
-            with st.expander(f"{lang['file_contents']} {len(df)} {lang['records_loaded']} {len(df.columns)} {lang['and']} {lang['columns_loaded']}"):
+            with st.expander(f"{lang['file_contents']} {len(df)} {lang['records_loaded']} {lang['and']} {len(df.columns)} {lang['columns_loaded']}"):
                 st.write(df.head())
                 
             # Preselect the target column if 'target', 'y', or a binary column exists
