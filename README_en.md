@@ -32,7 +32,7 @@ You can use these public datasets to test the application:
    - Target variable: `diagnosis` (M or B)
    - 569 instances, 30 features
 
-4. **[Cardiovascular Diseases in 10 years] (https://www.kaggle.com/code/bansodesandeep/cardiovascular-risk-prediction/input)**
+4. **[Cardiovascular Diseases in 10 years](https://www.kaggle.com/code/bansodesandeep/cardiovascular-risk-prediction/input)**
    - Target variables: `TenYearCHD`, `BPMeds`, `prevalentStroke`, `prevalentHyp`, `diabetes` (1 o 0)
    - 3390 instances, 16 features
 
